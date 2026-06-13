@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Hoops · 篮球技术动作沉浸式学习</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        display: ['Oswald', 'sans-serif'],
+                        sans: ['Noto Sans SC', 'sans-serif'],
+                    },
+                },
+            },
+        };
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: #080c14;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+
+        .ambient {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background:
+                radial-gradient(ellipse 60% 50% at 10% 20%, rgba(99, 102, 241, 0.12) 0%, transparent 70%),
+                radial-gradient(ellipse 50% 40% at 90% 80%, rgba(236, 72, 153, 0.08) 0%, transparent 70%),
+                linear-gradient(160deg, #080c14 0%, #0f172a 50%, #111827 100%);
+        }
+
+        .app-shell { position: relative; z-index: 1; }
+
+        .sidebar-item {
+            cursor: pointer;
+            transition: all 0.25s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-item:hover {
+            background: rgba(99, 102, 241, 0.08);
+            border-left-color: rgba(99, 102, 241, 0.5);
+            transform: translateX(3px);
+        }
+
+        .sidebar-item.active {
+            background: rgba(99, 102, 241, 0.15);
+            border-left-color: #818cf8;
+        }
+
+        .detail-enter {
+            animation: detailFade 0.45s ease forwards;
+        }
+
+        @keyframes detailFade {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-glass {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(148, 163, 184, 0.08);
+            border-radius: 1.25rem;
+        }
+
+        .media-card {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+
+        .media-card-label {
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: #64748b;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+            background: rgba(15, 23, 42, 0.5);
+        }
+
+        .difficulty-easy   { background: rgba(34, 197, 94, 0.15);  color: #86efac; }
+        .difficulty-medium { background: rgba(251, 146, 60, 0.15); color: #fdba74; }
+        .difficulty-hard   { background: rgba(239, 68, 68, 0.15);  color: #fca5a5; }
+
+        .step-num {
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            font-family: 'Oswald', sans-serif;
+            font-weight: 700;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .progress-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.1rem;
+            border-radius: 0.625rem;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            background: rgba(99, 102, 241, 0.08);
+            color: #c7d2fe;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.875rem;
+        }
+
+        .progress-btn:hover {
+            background: rgba(99, 102, 241, 0.18);
+            border-color: rgba(99, 102, 241, 0.5);
+        }
+
+        .progress-btn.active-mastered {
+            background: rgba(34, 197, 94, 0.15);
+            border-color: rgba(34, 197, 94, 0.4);
+            color: #86efac;
+        }
+
+        .progress-btn.active-review {
+            background: rgba(251, 191, 36, 0.12);
+            border-color: rgba(251, 191, 36, 0.35);
+            color: #fde68a;
+        }
+
+        .progress-ring {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: conic-gradient(#6366f1 var(--pct), rgba(51, 65, 85, 0.5) 0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .progress-ring-inner {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: #0f172a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #a5b4fc;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar { width: 4px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.3); border-radius: 4px; }
+
+        @media (max-width: 768px) {
+            .layout-grid { grid-template-columns: 1fr !important; height: auto !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient"></div>
+
+    <div class="app-shell min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="border-b border-slate-800/60 bg-slate-950/40 backdrop-blur-md sticky top-0 z-10">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
+                <div>
+                    <h1 class="font-display text-2xl sm:text-3xl font-bold tracking-wide bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
+                        VIBE HOOPS
+                    </h1>
+                    <p class="text-xs text-slate-500 mt-0.5 tracking-wider">篮球技术动作 · 沉浸式学习系统</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div id="progress-ring" class="progress-ring" style="--pct: 0%">
+                        <div class="progress-ring-inner"><span id="progress-text">0/3</span></div>
+                    </div>
+                    <div class="text-right hidden sm:block">
+                        <p class="text-xs text-slate-500">Phase 1 · 知识库骨架</p>
+                        <p class="text-xs text-slate-600">无摄像头 · 无计时 · 纯教学</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main -->
+        <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
+            <div class="layout-grid grid grid-cols-4 gap-5" style="height: calc(100vh - 120px); min-height: 520px;">
+
+                <!-- 左侧 1/4 导航 -->
+                <aside class="col-span-1 card-glass p-5 overflow-y-auto scrollbar-thin flex flex-col">
+                    <h2 class="font-display text-sm tracking-widest text-indigo-400 mb-1">SKILL MAP</h2>
+                    <p class="text-xs text-slate-500 mb-5">技术分类与动作导航</p>
+                    <div id="menu-container" class="flex-1"></div>
+                    <div id="review-panel" class="mt-4 pt-4 border-t border-slate-800/60 hidden">
+                        <p class="text-xs text-amber-400/80 font-medium mb-2">📌 今日复习</p>
+                        <ul id="review-list" class="space-y-1 text-xs text-slate-400"></ul>
+                    </div>
+                </aside>
+
+                <!-- 右侧 3/4 详情 -->
+                <section class="col-span-3 overflow-y-auto scrollbar-thin">
+                    <div id="detail-container"></div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ─── 动作知识库 JSON ───────────────────────────────────────────
+        const CATEGORY_ORDER = ['控球基础', '投篮定型', '突破脚步'];
+
+        const CATEGORY_ICONS = {
+            '控球基础': '🏀',
+            '投篮定型': '🎯',
+            '突破脚步': '⚡',
+        };
+
+        const skillsData = [
+            {
+                id: 1,
+                name: '库里投篮手型定型',
+                category: '投篮定型',
+                difficulty: 'medium',
+                mantra: '肩 · 肘 · 腕 · 指，一条直线',
+                description: '学习 NBA 三分王库里的标准投篮手型，从准备到出手的完整定型流程，适合新手建立稳定出手习惯。',
+                steps: [
+                    { title: '准备姿势', detail: '双脚与肩同宽，膝盖微屈。球置于腰际，双手呈「V」字握球，肘部贴近身体两侧。' },
+                    { title: '上升阶段', detail: '腿部向上蹬地发力，同时手臂同步上举。肘部保持在肩正下方，避免外八。' },
+                    { title: '发力顶点', detail: '在最高点短暂停驻，肩·肘·腕·指保持一条竖直线。视线锁定篮筐中心。' },
+                    { title: '出手与跟投', detail: '手腕快速下压翻腕，食指与中指最后离球。出手带后旋，形成柔和「蛋形」弧线。' },
+                ],
+                commonMistakes: [
+                    '肘部外八 — 投篮轨迹不稳定，容易左右偏移',
+                    '蹬腿不充分 — 射程不足，容易投短',
+                    '出手点过低 — 易被干扰或封盖',
+                    '手腕僵硬 — 旋转不足，变成「菜花球」',
+                ],
+                imageUrl: 'https://placehold.co/800x500/1e293b/818cf8?text=Curry+Shot+Form+GIF&font=oswald',
+                videoEmbed: `<iframe class="w-full aspect-video" src="https://www.youtube.com/embed/HoCwa6gnmM0" title="库里投篮教学" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`,
+            },
+            {
+                id: 2,
+                name: '艾弗森 Crossover 变向',
+                category: '控球基础',
+                difficulty: 'hard',
+                mantra: '速度 · 节奏 · 重心转移',
+                description: 'AI 标志性的体前变向突破，核心在于用节奏欺骗防守、用重心转移创造突破空间。',
+                steps: [
+                    { title: '起始推进', detail: '右手运球向防守者推进，重心偏右侧，保持低重心与护球手就绪。' },
+                    { title: '减速虚晃', detail: '右手运球突然减速，肩髋同步向右倾斜，制造「要向右突破」的假象。' },
+                    { title: '快速变向', detail: '左手在身体前方快速接球，触球幅度小而快，重心瞬间切向左侧。' },
+                    { title: '加速突破', detail: '右脚蹬地爆发，左手加速运球，第一时间超越防守者冲向篮筐。' },
+                ],
+                commonMistakes: [
+                    '变向节奏不够突然 — 防守者不会被晃开',
+                    '重心过高或晃动过大 — 失去平衡，变向后踉跄',
+                    '二次触球过高 — 容易被掏球',
+                    '变向后不加速 — 防守者轻松追防',
+                ],
+                imageUrl: 'https://placehold.co/800x500/1e293b/ec4899?text=Iverson+Crossover+GIF&font=oswald',
+                videoEmbed: `<iframe class="w-full aspect-video" src="https://www.youtube.com/embed/2Z36EhFkbOU" title="艾弗森 Crossover" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`,
+            },
+            {
+                id: 3,
+                name: '欧洲步上篮',
+                category: '突破脚步',
+                difficulty: 'easy',
+                mantra: '脚步 · 节奏 · 护球',
+                description: '吉诺比利标志动作，利用两步内的左右变向骗过协防，是篮下终结的经典脚步技巧。',
+                steps: [
+                    { title: '助跑启动', detail: '从三分线内两步助跑接近篮筐，第一步大步，第二步准备起跳或变向。' },
+                    { title: '第一步变向', detail: '第二步落地时，身体向右摆动，诱导防守者以为你要从右侧上篮。' },
+                    { title: '第二步变向', detail: '迅速向左跨步，用身体贴住防守者形成对抗，同时护球手打开。' },
+                    { title: '柔和出手', detail: '靠近篮筐后用指尖轻拨，控制旋转与落点，注意避免走步违例。' },
+                ],
+                commonMistakes: [
+                    '走步违例 — 欧洲步最常见问题，需严格数清步数',
+                    '护球不足 — 变向过程中容易被切球',
+                    '两次变向节奏雷同 — 无法骗过协防球员',
+                    '出手过硬 — 打板弹飞，缺乏手感控制',
+                ],
+                imageUrl: 'https://placehold.co/800x500/1e293b/34d399?text=Euro+Step+Layup+GIF&font=oswald',
+                videoEmbed: `<iframe class="w-full aspect-video" src="https://www.youtube.com/embed/NiN5kpCn9hU" title="欧洲步教学" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`,
+            },
+        ];
+
+        // ─── 状态 ─────────────────────────────────────────────────────
+        const STORAGE_KEY = 'vibeHoopsProgress';
+        let currentSkillId = 1;
+        let progress = loadProgress();
+
+        function loadProgress() {
+            try {
+                return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+            } catch {
+                return {};
+            }
+        }
+
+        function saveProgress() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+        }
+
+        function getSkillProgress(id) {
+            return progress[id] || { mastered: false, review: false };
+        }
+
+        function difficultyLabel(d) {
+            return { easy: '入门', medium: '进阶', hard: '高阶' }[d] || d;
+        }
+
+        function difficultyClass(d) {
+            return `difficulty-${d}`;
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        // ─── 渲染：左侧菜单 ───────────────────────────────────────────
+        function renderMenu() {
+            const container = document.getElementById('menu-container');
+            container.innerHTML = '';
+
+            CATEGORY_ORDER.forEach(category => {
+                const skills = skillsData.filter(s => s.category === category);
+                if (!skills.length) return;
+
+                const block = document.createElement('div');
+                block.className = 'mb-5';
+
+                block.innerHTML = `
+                    <h3 class="flex items-center gap-1.5 text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
+                        <span>${CATEGORY_ICONS[category] || '•'}</span>
+                        ${escapeHtml(category)}
+                    </h3>
+                `;
+
+                skills.forEach(skill => {
+                    const sp = getSkillProgress(skill.id);
+                    const item = document.createElement('div');
+                    item.className = `sidebar-item rounded-lg px-3 py-2.5 mb-1 ${currentSkillId === skill.id ? 'active' : ''}`;
+                    item.innerHTML = `
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="text-sm leading-snug ${currentSkillId === skill.id ? 'text-white font-medium' : 'text-slate-300'}">${escapeHtml(skill.name)}</span>
+                            <span class="flex gap-1 shrink-0">
+                                ${sp.review ? '<span class="text-amber-400 text-xs" title="今日复习">📌</span>' : ''}
+                                ${sp.mastered ? '<span class="text-green-400 text-xs" title="已掌握">✓</span>' : ''}
+                            </span>
+                        </div>
+                    `;
+                    item.addEventListener('click', () => selectSkill(skill.id));
+                    block.appendChild(item);
+                });
+
+                container.appendChild(block);
+            });
+        }
+
+        // ─── 渲染：右侧详情 ───────────────────────────────────────────
+        function renderDetail() {
+            const skill = skillsData.find(s => s.id === currentSkillId);
+            if (!skill) return;
+
+            const sp = getSkillProgress(skill.id);
+            const container = document.getElementById('detail-container');
+
+            container.innerHTML = `
+                <div class="detail-enter card-glass p-6 sm:p-8">
+                    <!-- 标题区 -->
+                    <div class="mb-7 pb-6 border-b border-slate-800/60">
+                        <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+                            <div>
+                                <p class="text-xs text-indigo-400/70 tracking-widest uppercase mb-1">${escapeHtml(skill.category)}</p>
+                                <h2 class="font-display text-2xl sm:text-4xl font-bold text-white tracking-wide">${escapeHtml(skill.name)}</h2>
+                                <p class="text-sm text-slate-400 mt-2 max-w-2xl leading-relaxed">${escapeHtml(skill.description)}</p>
+                            </div>
+                            <span class="inline-block px-3 py-1 rounded-full text-xs font-bold ${difficultyClass(skill.difficulty)}">${difficultyLabel(skill.difficulty)}</span>
+                        </div>
+                        <div class="bg-slate-900/60 rounded-xl px-5 py-4 border-l-4 border-indigo-500">
+                            <p class="text-xs text-slate-500 tracking-widest uppercase mb-1">核心口诀</p>
+                            <p class="font-display text-xl sm:text-2xl text-indigo-200 tracking-wider">「${escapeHtml(skill.mantra)}」</p>
+                        </div>
+                    </div>
+
+                    <!-- 媒体 + 步骤 -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-7">
+                        <!-- 左：GIF + 视频 -->
+                        <div class="space-y-5">
+                            <div class="media-card">
+                                <div class="media-card-label">标准动作演示 · GIF / 示意图</div>
+                                <div class="aspect-[16/10] bg-slate-900 flex items-center justify-center">
+                                    <img src="${escapeHtml(skill.imageUrl)}" alt="${escapeHtml(skill.name)}" class="w-full h-full object-cover">
+                                </div>
+                            </div>
+                            <div class="media-card">
+                                <div class="media-card-label">视频教程 · YouTube 嵌入</div>
+                                <div class="p-3 bg-slate-900/40">
+                                    ${skill.videoEmbed}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 右：步骤 + 错误 -->
+                        <div class="space-y-7">
+                            <div>
+                                <h3 class="font-display text-lg tracking-wide text-white mb-4">动作步骤拆解</h3>
+                                <div class="space-y-4">
+                                    ${skill.steps.map((step, i) => `
+                                        <div class="flex gap-3">
+                                            <div class="step-num">${i + 1}</div>
+                                            <div>
+                                                <h4 class="font-medium text-white text-sm mb-0.5">${escapeHtml(step.title)}</h4>
+                                                <p class="text-sm text-slate-400 leading-relaxed">${escapeHtml(step.detail)}</p>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            <div>
+                                <h3 class="font-display text-lg tracking-wide text-white mb-4">常见错误</h3>
+                                <div class="space-y-2">
+                                    ${skill.commonMistakes.map(m => `
+                                        <div class="text-sm text-red-300/90 bg-red-500/8 px-3 py-2.5 rounded-lg border border-red-500/15 flex gap-2">
+                                            <span class="text-red-400 shrink-0">✕</span>
+                                            <span>${escapeHtml(m)}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 学习进度 -->
+                    <div class="flex flex-wrap gap-3 pt-5 border-t border-slate-800/60">
+                        <button class="progress-btn ${sp.mastered ? 'active-mastered' : ''}" data-action="mastered" data-id="${skill.id}">
+                            <span>${sp.mastered ? '✓' : '○'}</span>
+                            <span>${sp.mastered ? '已掌握' : '标记已掌握'}</span>
+                        </button>
+                        <button class="progress-btn ${sp.review ? 'active-review' : ''}" data-action="review" data-id="${skill.id}">
+                            <span>📌</span>
+                            <span>${sp.review ? '已加入复习' : '加入今日复习'}</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            container.querySelectorAll('[data-action]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    toggleProgress(Number(btn.dataset.id), btn.dataset.action);
+                });
+            });
+        }
+
+        // ─── 交互 ─────────────────────────────────────────────────────
+        function selectSkill(id) {
+            currentSkillId = id;
+            renderMenu();
+            renderDetail();
+        }
+
+        function toggleProgress(skillId, action) {
+            const sp = getSkillProgress(skillId);
+            if (action === 'mastered') sp.mastered = !sp.mastered;
+            if (action === 'review')   sp.review   = !sp.review;
+
+            if (sp.mastered || sp.review) {
+                sp.updatedAt = new Date().toISOString();
+                progress[skillId] = sp;
+            } else {
+                delete progress[skillId];
+            }
+
+            saveProgress();
+            updateProgressRing();
+            renderReviewPanel();
+            renderMenu();
+            renderDetail();
+        }
+
+        function updateProgressRing() {
+            const total = skillsData.length;
+            const mastered = skillsData.filter(s => getSkillProgress(s.id).mastered).length;
+            const pct = total ? Math.round((mastered / total) * 100) : 0;
+
+            document.getElementById('progress-ring').style.setProperty('--pct', `${pct}%`);
+            document.getElementById('progress-text').textContent = `${mastered}/${total}`;
+        }
+
+        function renderReviewPanel() {
+            const panel = document.getElementById('review-panel');
+            const list  = document.getElementById('review-list');
+            const items = skillsData.filter(s => getSkillProgress(s.id).review);
+
+            if (!items.length) {
+                panel.classList.add('hidden');
+                return;
+            }
+
+            panel.classList.remove('hidden');
+            list.innerHTML = items.map(s => `
+                <li class="cursor-pointer hover:text-indigo-300 transition-colors" data-review-id="${s.id}">
+                    ${escapeHtml(s.name)}
+                </li>
+            `).join('');
+
+            list.querySelectorAll('[data-review-id]').forEach(li => {
+                li.addEventListener('click', () => selectSkill(Number(li.dataset.reviewId)));
+            });
+        }
+
+        // ─── 启动 ─────────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            updateProgressRing();
+            renderReviewPanel();
+            renderMenu();
+            renderDetail();
+        });
+    </script>
+</body>
+</html>

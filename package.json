@@ -1,0 +1,20 @@
+{
+  "name": "basketball-training",
+  "version": "1.0.0",
+  "description": "Vibe Hoops — 篮球技术动作沉浸式学习 Web App",
+  "scripts": {
+    "start": "live-server --port=3000 --open=index.html",
+    "test": "echo \"No tests specified\""
+  },
+  "keywords": [
+    "basketball",
+    "training",
+    "vibe-coding",
+    "learning"
+  ],
+  "author": "samuelsun620-create",
+  "license": "MIT",
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}
