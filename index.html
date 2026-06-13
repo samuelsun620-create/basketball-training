@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Vibe Hoops · 篮球技术动作沉浸式学习</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,11 +23,21 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
+        html, body {
+            width: 100%;
+            height: 100%;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+
         body {
             font-family: 'Noto Sans SC', sans-serif;
             background: #080c14;
             color: #e2e8f0;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         .ambient {
@@ -41,12 +51,21 @@
                 linear-gradient(160deg, #080c14 0%, #0f172a 50%, #111827 100%);
         }
 
-        .app-shell { position: relative; z-index: 1; }
+        .app-shell { 
+            position: relative; 
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
 
         .sidebar-item {
             cursor: pointer;
             transition: all 0.25s ease;
             border-left: 3px solid transparent;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
         }
 
         .sidebar-item:hover {
@@ -123,6 +142,8 @@
             cursor: pointer;
             transition: all 0.2s ease;
             font-size: 0.875rem;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
         }
 
         .progress-btn:hover {
@@ -150,6 +171,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0;
         }
 
         .progress-ring-inner {
@@ -169,46 +191,323 @@
         .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
         .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.3); border-radius: 4px; }
 
+        /* 移动端布局（768px以下） */
         @media (max-width: 768px) {
-            .layout-grid { grid-template-columns: 1fr !important; height: auto !important; }
+            .app-shell {
+                height: 100dvh;
+            }
+
+            header {
+                padding-top: max(env(safe-area-inset-top), 1rem);
+            }
+
+            main {
+                padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+            }
+
+            .layout-grid {
+                grid-template-columns: 1fr !important;
+                gap: 0 !important;
+                height: auto !important;
+                flex-wrap: wrap;
+            }
+
+            .layout-grid > aside {
+                col-span: 1 !important;
+                display: none;
+                position: fixed;
+                left: 0;
+                top: 80px;
+                width: 280px;
+                height: calc(100dvh - 80px);
+                z-index: 50;
+                border-radius: 0;
+                max-height: none;
+            }
+
+            .layout-grid > aside.mobile-open {
+                display: flex;
+            }
+
+            .layout-grid > section {
+                col-span: 1 !important;
+                width: 100%;
+                height: auto !important;
+                min-height: calc(100dvh - 140px);
+                overflow-y: auto;
+            }
+
+            /* 侧边栏遮罩 */
+            .mobile-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 40;
+                display: none;
+            }
+
+            .mobile-overlay.active {
+                display: block;
+            }
+
+            /* 菜单按钮 */
+            .mobile-menu-btn {
+                display: flex;
+                width: 44px;
+                height: 44px;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                border-radius: 0.5rem;
+                border: 1px solid rgba(99, 102, 241, 0.3);
+                background: rgba(99, 102, 241, 0.08);
+                color: #c7d2fe;
+                -webkit-tap-highlight-color: transparent;
+                user-select: none;
+            }
+
+            .mobile-menu-btn:active {
+                background: rgba(99, 102, 241, 0.18);
+                border-color: rgba(99, 102, 241, 0.5);
+            }
+
+            /* 缩小详情卡片 */
+            #detail-container .card-glass {
+                border-radius: 0.875rem;
+            }
+
+            /* 标题区响应式 */
+            .detail-title-row {
+                flex-direction: column;
+            }
+
+            .detail-title-row .difficulty-badge {
+                margin-top: 0.5rem;
+                align-self: flex-start;
+            }
+
+            /* 媒体和步骤并排改为竖排 */
+            .detail-media-steps {
+                grid-template-columns: 1fr !important;
+                gap: 1.5rem;
+            }
+
+            /* 按钮自适应 */
+            .detail-buttons {
+                flex-direction: column;
+            }
+
+            .detail-buttons .progress-btn {
+                width: 100%;
+                justify-content: center;
+                font-size: 0.8rem;
+            }
+
+            /* Header 适应 */
+            .header-title {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+
+            .header-title h1 {
+                font-size: 1.5rem;
+                line-height: 1.2;
+            }
+
+            .header-title p {
+                font-size: 0.7rem;
+            }
+
+            .header-stats {
+                gap: 0.75rem;
+            }
+
+            .header-stats-text {
+                display: none;
+            }
+
+            /* 视频容器适应 */
+            .media-card {
+                border-radius: 0.75rem;
+            }
+
+            .media-card-label {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.6rem;
+            }
+
+            /* 步骤文字缩小 */
+            .step-num {
+                width: 1.75rem;
+                height: 1.75rem;
+                font-size: 0.8rem;
+            }
+
+            h3.step-title {
+                font-size: 0.95rem;
+            }
+
+            p.step-detail {
+                font-size: 0.875rem;
+            }
+
+            /* 错误提示 */
+            .error-item {
+                font-size: 0.8rem;
+                padding: 0.625rem 0.75rem;
+            }
+
+            /* 菜单项缩小 */
+            .sidebar-item {
+                padding: 0.6rem 0.5rem !important;
+                margin-bottom: 0.25rem !important;
+            }
+
+            .sidebar-item span:first-child {
+                font-size: 0.8rem;
+            }
+
+            /* 核心口诀 */
+            .mantra-box {
+                padding: 0.75rem 1rem;
+            }
+
+            .mantra-text {
+                font-size: 1rem;
+            }
+
+            /* 复习面板 */
+            #review-panel {
+                margin-top: 0.5rem;
+                padding-top: 0.5rem;
+            }
+
+            #review-panel p {
+                font-size: 0.7rem;
+                margin-bottom: 0.5rem;
+            }
+
+            #review-list li {
+                font-size: 0.75rem;
+                padding: 0.25rem 0;
+            }
+        }
+
+        /* 超小屏（480px以下） */
+        @media (max-width: 480px) {
+            .header-title h1 {
+                font-size: 1.25rem;
+            }
+
+            .detail-media-steps {
+                gap: 1rem !important;
+            }
+
+            .step-num {
+                width: 1.5rem;
+                height: 1.5rem;
+                font-size: 0.7rem;
+            }
+
+            h2.detail-heading {
+                font-size: 1.5rem;
+            }
+
+            h3.step-title {
+                font-size: 0.9rem;
+            }
+
+            p.step-detail {
+                font-size: 0.8rem;
+            }
+
+            .mantra-box {
+                padding: 0.625rem 0.75rem;
+            }
+
+            .mantra-text {
+                font-size: 0.875rem;
+            }
+
+            .progress-ring {
+                width: 40px;
+                height: 40px;
+            }
+
+            .progress-ring-inner {
+                width: 32px;
+                height: 32px;
+                font-size: 0.6rem;
+            }
+        }
+
+        /* 纵向屏幕优化 */
+        @media (max-width: 768px) and (orientation: portrait) {
+            .layout-grid > section {
+                min-height: calc(100dvh - 140px);
+            }
+        }
+
+        /* 横向屏幕优化 */
+        @media (max-width: 1024px) and (orientation: landscape) {
+            .layout-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            .layout-grid > aside {
+                display: none;
+            }
+
+            main {
+                padding: 0.5rem;
+            }
+
+            #detail-container .card-glass {
+                padding: 1rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="ambient"></div>
 
-    <div class="app-shell min-h-screen flex flex-col">
+    <div class="app-shell">
         <!-- Header -->
-        <header class="border-b border-slate-800/60 bg-slate-950/40 backdrop-blur-md sticky top-0 z-10">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
-                <div>
-                    <h1 class="font-display text-2xl sm:text-3xl font-bold tracking-wide bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
+        <header class="border-b border-slate-800/60 bg-slate-950/40 backdrop-blur-md sticky top-0 z-30">
+            <div class="max-w-7xl mx-auto px-3 sm:px-6 py-3 flex items-center justify-between gap-2 sm:gap-4">
+                <div class="header-title flex flex-col flex-1 min-w-0">
+                    <h1 class="font-display text-xl sm:text-3xl font-bold tracking-wide bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 bg-clip-text text-transparent whitespace-nowrap overflow-hidden text-ellipsis">
                         VIBE HOOPS
                     </h1>
-                    <p class="text-xs text-slate-500 mt-0.5 tracking-wider">篮球技术动作 · 沉浸式学习系统</p>
+                    <p class="text-xs text-slate-500 tracking-wider hidden sm:block">篮球技术动作 · 沉浸式学习系统</p>
                 </div>
-                <div class="flex items-center gap-4">
+                <div class="header-stats flex items-center gap-2 sm:gap-4 flex-shrink-0">
                     <div id="progress-ring" class="progress-ring" style="--pct: 0%">
                         <div class="progress-ring-inner"><span id="progress-text">0/10</span></div>
                     </div>
-                    <div class="text-right hidden sm:block">
+                    <div class="header-stats-text text-right hidden sm:block">
                         <p class="text-xs text-slate-500">Phase 1 · 知识库骨架</p>
-                        <p class="text-xs text-slate-600">无摄像头 · 无计时 · 纯教学</p>
+                        <p class="text-xs text-slate-600">无摄像头 · 无计�� · 纯教学</p>
                     </div>
+                    <button class="mobile-menu-btn sm:hidden" id="mobile-menu-btn" aria-label="菜单">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
                 </div>
             </div>
         </header>
 
         <!-- Main -->
-        <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
-            <div class="layout-grid grid grid-cols-4 gap-5" style="height: calc(100vh - 120px); min-height: 520px;">
+        <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-3 sm:py-6 overflow-hidden">
+            <div class="layout-grid grid grid-cols-4 gap-5 h-full">
 
                 <!-- 左侧 1/4 导航 -->
-                <aside class="col-span-1 card-glass p-5 overflow-y-auto scrollbar-thin flex flex-col">
-                    <h2 class="font-display text-sm tracking-widest text-indigo-400 mb-1">SKILL MAP</h2>
-                    <p class="text-xs text-slate-500 mb-5">技术分类与动作导航</p>
+                <aside class="col-span-1 card-glass p-4 sm:p-5 overflow-y-auto scrollbar-thin flex flex-col">
+                    <h2 class="font-display text-xs sm:text-sm tracking-widest text-indigo-400 mb-1">SKILL MAP</h2>
+                    <p class="text-xs text-slate-500 mb-4 sm:mb-5">技术分类与动作导航</p>
                     <div id="menu-container" class="flex-1"></div>
-                    <div id="review-panel" class="mt-4 pt-4 border-t border-slate-800/60 hidden">
+                    <div id="review-panel" class="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-slate-800/60 hidden">
                         <p class="text-xs text-amber-400/80 font-medium mb-2">📌 今日复习</p>
                         <ul id="review-list" class="space-y-1 text-xs text-slate-400"></ul>
                     </div>
@@ -220,12 +519,42 @@
                 </section>
             </div>
         </main>
+
+        <!-- 移动端菜单遮罩 -->
+        <div class="mobile-overlay" id="mobile-overlay"></div>
     </div>
 
     <!-- 引入外部数据文件 -->
     <script src="skills-data.js"></script>
 
     <script>
+        // ─── 移动端菜单控制 ───────────────────────────────────────────
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileOverlay = document.getElementById('mobile-overlay');
+        const aside = document.querySelector('aside');
+
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', () => {
+                aside.classList.toggle('mobile-open');
+                mobileOverlay.classList.toggle('active');
+            });
+
+            mobileOverlay.addEventListener('click', () => {
+                aside.classList.remove('mobile-open');
+                mobileOverlay.classList.remove('active');
+            });
+
+            // 点击菜单项时关闭侧边栏
+            aside.addEventListener('click', (e) => {
+                if (e.target.closest('.sidebar-item')) {
+                    setTimeout(() => {
+                        aside.classList.remove('mobile-open');
+                        mobileOverlay.classList.remove('active');
+                    }, 100);
+                }
+            });
+        }
+
         // ─── 状态 ─────────────────────────────────────────────────────
         const STORAGE_KEY = 'vibeHoopsProgress';
         let currentSkillId = 1;
@@ -269,12 +598,12 @@
                 if (!skills.length) return;
 
                 const block = document.createElement('div');
-                block.className = 'mb-5';
+                block.className = 'mb-4 sm:mb-5';
 
                 block.innerHTML = `
                     <h3 class="flex items-center gap-1.5 text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">
                         <span>${CATEGORY_ICONS[category] || '•'}</span>
-                        ${escapeHtml(category)}
+                        <span>${escapeHtml(category)}</span>
                     </h3>
                 `;
 
@@ -284,7 +613,7 @@
                     item.className = `sidebar-item rounded-lg px-3 py-2.5 mb-1 ${currentSkillId === skill.id ? 'active' : ''}`;
                     item.innerHTML = `
                         <div class="flex items-center justify-between gap-2">
-                            <span class="text-sm leading-snug ${currentSkillId === skill.id ? 'text-white font-medium' : 'text-slate-300'}">${escapeHtml(skill.name)}</span>
+                            <span class="text-sm leading-snug truncate ${currentSkillId === skill.id ? 'text-white font-medium' : 'text-slate-300'}">${escapeHtml(skill.name)}</span>
                             <span class="flex gap-1 shrink-0">
                                 ${sp.review ? '<span class="text-amber-400 text-xs" title="今日复习">📌</span>' : ''}
                                 ${sp.mastered ? '<span class="text-green-400 text-xs" title="已掌握">✓</span>' : ''}
@@ -308,27 +637,27 @@
             const container = document.getElementById('detail-container');
 
             container.innerHTML = `
-                <div class="detail-enter card-glass p-6 sm:p-8">
+                <div class="detail-enter card-glass p-4 sm:p-8">
                     <!-- 标题区 -->
-                    <div class="mb-7 pb-6 border-b border-slate-800/60">
-                        <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
-                            <div>
+                    <div class="mb-5 sm:mb-7 pb-4 sm:pb-6 border-b border-slate-800/60">
+                        <div class="detail-title-row flex flex-wrap items-start justify-between gap-2 sm:gap-3 mb-3 sm:mb-4">
+                            <div class="flex-1">
                                 <p class="text-xs text-indigo-400/70 tracking-widest uppercase mb-1">${escapeHtml(skill.category)}</p>
-                                <h2 class="font-display text-2xl sm:text-4xl font-bold text-white tracking-wide">${escapeHtml(skill.name)}</h2>
-                                <p class="text-sm text-slate-400 mt-2 max-w-2xl leading-relaxed">${escapeHtml(skill.description)}</p>
+                                <h2 class="detail-heading font-display text-xl sm:text-4xl font-bold text-white tracking-wide">${escapeHtml(skill.name)}</h2>
+                                <p class="text-sm text-slate-400 mt-2 leading-relaxed line-clamp-2 sm:line-clamp-3">${escapeHtml(skill.description)}</p>
                             </div>
-                            <span class="inline-block px-3 py-1 rounded-full text-xs font-bold ${difficultyClass(skill.difficulty)}">${difficultyLabel(skill.difficulty)}</span>
+                            <span class="difficulty-badge inline-block px-3 py-1 rounded-full text-xs font-bold ${difficultyClass(skill.difficulty)} flex-shrink-0">${difficultyLabel(skill.difficulty)}</span>
                         </div>
-                        <div class="bg-slate-900/60 rounded-xl px-5 py-4 border-l-4 border-indigo-500">
+                        <div class="mantra-box bg-slate-900/60 rounded-xl px-4 sm:px-5 py-3 sm:py-4 border-l-4 border-indigo-500">
                             <p class="text-xs text-slate-500 tracking-widest uppercase mb-1">核心口诀</p>
-                            <p class="font-display text-xl sm:text-2xl text-indigo-200 tracking-wider">「${escapeHtml(skill.mantra)}」</p>
+                            <p class="mantra-text font-display text-base sm:text-2xl text-indigo-200 tracking-wider">「${escapeHtml(skill.mantra)}」</p>
                         </div>
                     </div>
 
                     <!-- 媒体 + 步骤 -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-7">
+                    <div class="detail-media-steps grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-5 sm:mb-7">
                         <!-- 左：GIF + 视频 -->
-                        <div class="space-y-5">
+                        <div class="space-y-4 sm:space-y-5">
                             <div class="media-card">
                                 <div class="media-card-label">标准动作演示 · GIF / 示意图</div>
                                 <div class="aspect-[16/10] bg-slate-900 flex items-center justify-center">
@@ -337,33 +666,33 @@
                             </div>
                             <div class="media-card">
                                 <div class="media-card-label">视频教程 · YouTube 嵌入</div>
-                                <div class="p-3 bg-slate-900/40">
+                                <div class="p-2 sm:p-3 bg-slate-900/40">
                                     ${skill.videoEmbed}
                                 </div>
                             </div>
                         </div>
 
                         <!-- 右：步骤 + 错误 -->
-                        <div class="space-y-7">
+                        <div class="space-y-5 sm:space-y-7">
                             <div>
-                                <h3 class="font-display text-lg tracking-wide text-white mb-4">动作步骤拆解</h3>
-                                <div class="space-y-4">
+                                <h3 class="font-display text-base sm:text-lg tracking-wide text-white mb-3 sm:mb-4">动作步骤拆解</h3>
+                                <div class="space-y-3 sm:space-y-4">
                                     ${skill.steps.map((step, i) => `
-                                        <div class="flex gap-3">
+                                        <div class="flex gap-2 sm:gap-3">
                                             <div class="step-num">${i + 1}</div>
-                                            <div>
-                                                <h4 class="font-medium text-white text-sm mb-0.5">${escapeHtml(step.title)}</h4>
-                                                <p class="text-sm text-slate-400 leading-relaxed">${escapeHtml(step.detail)}</p>
+                                            <div class="flex-1 min-w-0">
+                                                <h4 class="step-title font-medium text-white text-sm mb-0.5">${escapeHtml(step.title)}</h4>
+                                                <p class="step-detail text-sm text-slate-400 leading-relaxed">${escapeHtml(step.detail)}</p>
                                             </div>
                                         </div>
                                     `).join('')}
                                 </div>
                             </div>
                             <div>
-                                <h3 class="font-display text-lg tracking-wide text-white mb-4">常见错误</h3>
+                                <h3 class="font-display text-base sm:text-lg tracking-wide text-white mb-3 sm:mb-4">常见错误</h3>
                                 <div class="space-y-2">
                                     ${skill.commonMistakes.map(m => `
-                                        <div class="text-sm text-red-300/90 bg-red-500/8 px-3 py-2.5 rounded-lg border border-red-500/15 flex gap-2">
+                                        <div class="error-item text-sm text-red-300/90 bg-red-500/8 px-3 py-2.5 rounded-lg border border-red-500/15 flex gap-2">
                                             <span class="text-red-400 shrink-0">✕</span>
                                             <span>${escapeHtml(m)}</span>
                                         </div>
@@ -374,14 +703,16 @@
                     </div>
 
                     <!-- 学习进度 -->
-                    <div class="flex flex-wrap gap-3 pt-5 border-t border-slate-800/60">
+                    <div class="detail-buttons flex flex-wrap gap-2 sm:gap-3 pt-4 sm:pt-5 border-t border-slate-800/60">
                         <button class="progress-btn ${sp.mastered ? 'active-mastered' : ''}" data-action="mastered" data-id="${skill.id}">
                             <span>${sp.mastered ? '✓' : '○'}</span>
-                            <span>${sp.mastered ? '已掌握' : '标记已掌握'}</span>
+                            <span class="hidden sm:inline">${sp.mastered ? '已掌握' : '标记已掌握'}</span>
+                            <span class="inline sm:hidden">${sp.mastered ? '已掌握' : '掌握'}</span>
                         </button>
                         <button class="progress-btn ${sp.review ? 'active-review' : ''}" data-action="review" data-id="${skill.id}">
                             <span>📌</span>
-                            <span>${sp.review ? '已加入复习' : '加入今日复习'}</span>
+                            <span class="hidden sm:inline">${sp.review ? '已加入复习' : '加入今日复习'}</span>
+                            <span class="inline sm:hidden">${sp.review ? '已复习' : '复习'}</span>
                         </button>
                     </div>
                 </div>
@@ -458,6 +789,13 @@
             renderMenu();
             renderDetail();
         });
+
+        // 阻止iOS默认行为
+        document.addEventListener('touchmove', function(e) {
+            if (e.target.closest('.scrollbar-thin, section')) {
+                return;
+            }
+        }, { passive: false });
     </script>
 </body>
 </html>
